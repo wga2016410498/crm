@@ -1,4 +1,5 @@
 <%@ page contentType="text/html;charset=UTF-8" language="java" %>
+<%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 <%
 	String basePath = request.getScheme()+"://"+request.getServerName()+":"+request.getServerPort()+request.getContextPath()+"/";
 %>
@@ -9,6 +10,51 @@
 <link href="jquery/bootstrap_3.3.0/css/bootstrap.min.css" type="text/css" rel="stylesheet" />
 <script type="text/javascript" src="jquery/jquery-1.11.1-min.js"></script>
 <script type="text/javascript" src="jquery/bootstrap_3.3.0/js/bootstrap.min.js"></script>
+<script type="text/javascript">
+	$(function (){
+
+		$(window).keydown(function (event){
+			if(event.keyCode==13){
+				$("#loginBtn").click();
+			}
+		})
+		$("#loginBtn").click(function(event){
+			event.preventDefault();  // 防止默认表单提交行为
+			var loginAct = $.trim($("#loginAct").val());
+			var loginPwd = $.trim($("#loginPwd").val());
+			var isRemPwd = $("#isRemPwd").prop("checked");
+			if(loginAct==""){
+				alert("用户名不能为空");
+				return false;
+			}
+			if(loginPwd==""){
+				alert("密码不能为空");
+				return false;
+			}
+			$.ajax({
+				url:'settings/qx/user/login.do',
+				data:{
+					loginAct:loginAct,
+					loginPwd:loginPwd,
+					isRemPwd:isRemPwd
+				},
+				type:'post',
+				dataType:'json',
+				success:function (data){
+					if(data.code=="1"){
+						window.location.href="workbench/index.do";
+					}else{
+						$("#msg").text(data.message);
+					}
+				},
+				beforeSend:function(){
+					$("#msg").text("正在验证...");
+					return true;
+				}
+			})
+		})
+	})
+</script>
 </head>
 <body>
 	<div style="position: absolute; top: 0px; left: 0px; width: 60%;">
@@ -23,22 +69,27 @@
 			<div class="page-header">
 				<h1>登录</h1>
 			</div>
-			<form action="workbench/index.html" class="form-horizontal" role="form">
+			<form action="workbench/index.html" class="form-horizontal" role="form"  onsubmit="return false;">
 				<div class="form-group form-group-lg">
 					<div style="width: 350px;">
-						<input class="form-control" type="text" placeholder="用户名">
+						<input class="form-control" id="loginAct" type="text" value="${cookie.loginAct.value}" placeholder="用户名">
 					</div>
 					<div style="width: 350px; position: relative;top: 20px;">
-						<input class="form-control" type="password" placeholder="密码">
+						<input class="form-control" id="loginPwd" type="password" value="${cookie.loginPwd.value}" placeholder="密码">
 					</div>
 					<div class="checkbox"  style="position: relative;top: 30px; left: 10px;">
 						<label>
-							<input type="checkbox"> 十天内免登录
+							<c:if test="${not empty cookie.loginAct.value and not empty cookie.loginPwd.value}">
+								<input id="isRemPwd" type="checkbox" checked>
+							</c:if>
+							<c:if test="${empty cookie.loginAct.value or cookie.loginPwd.value}">
+								<input id="isRemPwd" type="checkbox">
+							</c:if>
+							十天内免登录
 						</label>
-						&nbsp;&nbsp;
 						<span id="msg"></span>
 					</div>
-					<button type="submit" class="btn btn-primary btn-lg btn-block"  style="width: 350px; position: relative;top: 45px;">登录</button>
+					<button type="submit" id="loginBtn" class="btn btn-primary btn-lg btn-block"  style="width: 350px; position: relative;top: 45px;">登录</button>
 				</div>
 			</form>
 		</div>
