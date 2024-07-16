@@ -63,4 +63,22 @@ public interface ActivityMapper {
     int deleteActivityByIds(String[] ids);
 
     Activity selectActivityById(String id);
+
+    int updateActivity(Activity activity);
+
+    List<Activity> selectAllActivitys();
+
+    int insertActivityByList(List<Activity> activityList);
+
+    Activity selectActivityForDetailById(String id);
+
+    List<Activity> selectActivityForDetailByClueId(String clueId);
+
+    List<Activity> selectActivityForDetailByNameClueId(Map<String, Object> map);
+
+    List<Activity> selectActivityForDetailByIds(String[] ids);
+
+    List<Activity> selectActivityForConvertClueId(Map<String, Object> map);
+
+
 }

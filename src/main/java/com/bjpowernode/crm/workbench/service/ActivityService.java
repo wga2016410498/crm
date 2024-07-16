@@ -14,5 +14,21 @@ public interface ActivityService {
 
     int deleteActivityByIds(String[] ids);
 
-    Activity selectActivityById(String Id);
+    Activity queryActivityById(String Id);
+
+    int updateActivity(Activity activity);
+
+    List<Activity> queryAllActivitys();
+
+    List<Activity> queryChoosedActivitys(String[] ids);
+
+    int insertActivityByList(List<Activity> activityList);
+
+    Activity queryActivityForDetailById(String id);
+
+    List<Activity> queryActivityForDetailByNameClueId(Map<String, Object> map);
+
+    List<Activity> queryActivityForDetailByIds(String[] ids);
+
+    List<Activity> queryActivityForConvertByNameClueId(Map<String, Object> map);
 }

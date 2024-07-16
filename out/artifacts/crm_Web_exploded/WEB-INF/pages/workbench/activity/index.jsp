@@ -188,6 +188,7 @@
 					dataType:'json',
 					success:function (data) {
 						//把市场活动的信息显示在修改的模态窗口上
+						alert(data.name);
 						$("#edit-id").val(data.id);
 						$("#edit-marketActivityOwner").val(data.owner);
 						$("#edit-marketActivityName").val(data.name);
@@ -200,6 +201,103 @@
 					}
 				});
 			});
+
+			$("#saveEditActivityBtn").click(function (){
+				var id=$("#edit-id").val();
+				var owner=$("#edit-marketActivityOwner").val();
+				var name=$("#edit-marketActivityName").val();
+				var startDate=$("#edit-startTime").val();
+				var endDate=$("#edit-endTime").val();
+				var cost=$.trim($("#edit-cost").val());
+				var description=$.trim($("#edit-description").val());
+
+				$.ajax({
+					url:'workbench/activity/saveEditActivity.do',
+					data:{
+						id:id,
+						owner:owner,
+						name:name,
+						startDate:startDate,
+						endDate:endDate,
+						cost:cost,
+						description:description},
+					type:'post',
+					dataType:'json',
+					success:function (data) {
+						if(data.code=="1"){
+							//关闭模态窗口
+							$("#editActivityModal").modal("hide");
+							//刷新市场活动列表,保持页号和每页显示条数都不变
+							queryActivityByConditionForPage($("#demo_pag1").bs_pagination('getOption', 'currentPage'),$("#demo_pag1").bs_pagination('getOption', 'rowsPerPage'));
+						}else{
+							//提示信息
+							alert(data.message);
+							//模态窗口不关闭
+							$("#editActivityModal").modal("show");
+						}
+					}
+				})
+			});
+			$("#exportActivityAllBtn").click(function (){
+				window.location.href="workbench/activity/exportAllActivity.do";
+			});
+			$("#exportActivityChoiceBtn").click(function(){
+				//查看选中的列表
+				var checkedIds = $("#tBody input[type='checkbox']:checked");
+				if(checkedIds.size()==0){
+					alert("请选择需要导出的市场活动");
+					return false;
+				}
+				var ids ="";
+				$.each(checkedIds,function () {//id=xxxx&id=xxx&.....&id=xxx&
+					ids+="id="+this.value+"&";
+				});
+				ids=ids.substr(0,ids.length-1);
+				window.location.href = "workbench/activity/exportChoosedActivity.do?"+ids;
+			});
+
+			$("#importActivityBtn").click(function (){
+				alert("111");
+				var activityFileName=$("#activityFile").val();
+				var suffix = activityFileName.substr(activityFileName.lastIndexOf(".")+1).toLocaleLowerCase();
+				if(suffix!="xls"){
+					alert("只支持xls文件");
+					return false;
+				}
+				var activityFile = $("#activityFile")[0].files[0];
+				if(activityFile.size>5*1024*1024){
+					alert("文件大小不超过5MB");
+					return false;
+				}
+				var formData = new FormData();
+				formData.append("activityFile",activityFile);
+				formData.append("userName","张三");//需要优化的地方
+
+				$.ajax({
+					url:'workbench/activity/importActivity.do',
+					data:formData,
+					processData:false, //是否把参数统一转化为字符串
+					contentType:false,
+					type:'post',
+					dataType:'json',
+					success:function (data) {
+						if(data.code=="1"){
+							//提示成功导入记录条数
+							alert("成功导入"+data.retData+"条记录");
+							//关闭模态窗口
+							$("#importActivityModal").modal("hide");
+							//刷新市场活动列表,显示第一页数据,保持每页显示条数不变
+							queryActivityByConditionForPage(1,$("#demo_pag1").bs_pagination('getOption', 'rowsPerPage'));
+						}else{
+							//提示信息
+							alert(data.message);
+							//模态窗口不关闭
+							$("#importActivityModal").modal("show");
+						}
+					}
+
+				})
+			})
 		});
 
 		function queryActivityByConditionForPage(pageNo,pageSize) {
@@ -232,7 +330,7 @@
 					$.each(data.activityList,function (index,obj) {
 						htmlStr+="<tr class=\"active\">";
 						htmlStr+="<td><input type=\"checkbox\" value=\""+obj.id+"\"/></td>";
-						htmlStr+="<td><a style=\"text-decoration: none; cursor: pointer;\" onclick=\"window.location.href='detail.html';\">"+obj.name+"</a></td>";
+						htmlStr+="<td><a style=\"text-decoration: none; cursor: pointer;\" onclick=\"window.location.href='workbench/activity/detailActivity.do?id="+obj.id+"'\">"+obj.name+"</a></td>";
 						htmlStr+="<td>"+obj.owner+"</td>";
 						htmlStr+="<td>"+obj.startDate+"</td>";
 						htmlStr+="<td>"+obj.endDate+"</td>";
@@ -370,18 +468,18 @@
 						</div>
 						<label for="edit-marketActivityName" class="col-sm-2 control-label">名称<span style="font-size: 15px; color: red;">*</span></label>
 						<div class="col-sm-10" style="width: 300px;">
-							<input type="text" class="form-control" id="edit-marketActivityName" value="发传单">
+							<input type="text" class="form-control" id="edit-marketActivityName">
 						</div>
 					</div>
 
 					<div class="form-group">
 						<label for="edit-startTime" class="col-sm-2 control-label">开始日期</label>
 						<div class="col-sm-10" style="width: 300px;">
-							<input type="text" class="form-control" id="edit-startTime" value="2020-10-10">
+							<input type="text" class="form-control" id="edit-startTime">
 						</div>
 						<label for="edit-endTime" class="col-sm-2 control-label">结束日期</label>
 						<div class="col-sm-10" style="width: 300px;">
-							<input type="text" class="form-control" id="edit-endTime" value="2020-10-20">
+							<input type="text" class="form-control" id="edit-endTime">
 						</div>
 					</div>
 
@@ -404,7 +502,7 @@
 			</div>
 			<div class="modal-footer">
 				<button type="button" class="btn btn-default" data-dismiss="modal">关闭</button>
-				<button type="button" class="btn btn-primary" data-dismiss="modal">更新</button>
+				<button type="button" class="btn btn-primary" id="saveEditActivityBtn" data-dismiss="modal">更新</button>
 			</div>
 		</div>
 	</div>
@@ -503,7 +601,7 @@
 			<div class="btn-group" style="position: relative; top: 18%;">
 				<button type="button" class="btn btn-default" data-toggle="modal" data-target="#importActivityModal" ><span class="glyphicon glyphicon-import"></span> 上传列表数据（导入）</button>
 				<button id="exportActivityAllBtn" type="button" class="btn btn-default"><span class="glyphicon glyphicon-export"></span> 下载列表数据（批量导出）</button>
-				<button id="exportActivityXzBtn" type="button" class="btn btn-default"><span class="glyphicon glyphicon-export"></span> 下载列表数据（选择导出）</button>
+				<button id="exportActivityChoiceBtn" type="button" class="btn btn-default"><span class="glyphicon glyphicon-export"></span> 下载列表数据（选择导出）</button>
 			</div>
 		</div>
 		<div style="position: relative;top: 10px;">
@@ -518,60 +616,10 @@
 				</tr>
 				</thead>
 				<tbody id="tBody">
-				<%--<tr class="active">
-                    <td><input type="checkbox" /></td>
-                    <td><a style="text-decoration: none; cursor: pointer;" onclick="window.location.href='detail.html';">发传单</a></td>
-                    <td>zhangsan</td>
-                    <td>2020-10-10</td>
-                    <td>2020-10-20</td>
-                </tr>
-                <tr class="active">
-                    <td><input type="checkbox" /></td>
-                    <td><a style="text-decoration: none; cursor: pointer;" onclick="window.location.href='detail.html';">发传单</a></td>
-                    <td>zhangsan</td>
-                    <td>2020-10-10</td>
-                    <td>2020-10-20</td>
-                </tr>--%>
 				</tbody>
 			</table>
 			<div id="demo_pag1"></div>
 		</div>
-
-		<%--<div style="height: 50px; position: relative;top: 30px;">
-            <div>
-                <button type="button" class="btn btn-default" style="cursor: default;">共<b id="totalRowsB">50</b>条记录</button>
-            </div>
-            <div class="btn-group" style="position: relative;top: -34px; left: 110px;">
-                <button type="button" class="btn btn-default" style="cursor: default;">显示</button>
-                <div class="btn-group">
-                    <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown">
-                        10
-                        <span class="caret"></span>
-                    </button>
-                    <ul class="dropdown-menu" role="menu">
-                        <li><a href="#">20</a></li>
-                        <li><a href="#">30</a></li>
-                    </ul>
-                </div>
-                <button type="button" class="btn btn-default" style="cursor: default;">条/页</button>
-            </div>
-            <div style="position: relative;top: -88px; left: 285px;">
-                <nav>
-                    <ul class="pagination">
-                        <li class="disabled"><a href="#">首页</a></li>
-                        <li class="disabled"><a href="#">上一页</a></li>
-                        <li class="active"><a href="#">1</a></li>
-                        <li><a href="#">2</a></li>
-                        <li><a href="#">3</a></li>
-                        <li><a href="#">4</a></li>
-                        <li><a href="#">5</a></li>
-                        <li><a href="#">下一页</a></li>
-                        <li class="disabled"><a href="#">末页</a></li>
-                    </ul>
-                </nav>
-            </div>
-        </div>--%>
-
 	</div>
 
 </div>
